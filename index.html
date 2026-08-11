@@ -486,7 +486,7 @@
             
             <div class="p-6 sm:p-8 text-center">
                 <h2 class="text-2xl font-extrabold text-navy-900 mb-6">
-                    Isi Data Diri Dulu Yuk!
+                    Isikan Biodatamu
                 </h2>
 
                 <form onsubmit="handleStartGame(event)" class="space-y-5 text-left">
@@ -533,18 +533,42 @@
                     </div>
                 </div>
 
-                <!-- Right Student Tag & Score Badge -->
-                <div class="flex items-center gap-2 sm:gap-4">
-                    <!-- Student Badge -->
-                    <div class="hidden sm:flex items-center gap-2 bg-navy-900 px-3 py-1.5 rounded-lg border border-transparent text-xs font-bold text-slate-200">
-                        <i class="fa-solid fa-user-graduate text-brand-blue"></i>
-                        <span id="displayStudentName">Siswa</span>
-                    </div>
+                <!-- Right Side Header Controls -->
+                <div class="flex items-center gap-2 sm:gap-4 relative">
+                    
+                    <!-- Mobile Hamburger Menu Button -->
+                    <button id="mobileMenuBtn" onclick="toggleMobileMenu()" class="sm:hidden text-white p-2 focus:outline-none bg-navy-700 hover:bg-navy-600 rounded-lg transition-colors">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
 
-                    <!-- Score Badge -->
-                    <div class="bg-amber-100 border border-amber-300 text-amber-900 px-3.5 py-1.5 rounded-xl font-extrabold text-sm sm:text-base flex items-center gap-2 shadow-sm">
-                        <span>🏆</span>
-                        <span>Score: <span id="scoreText">0</span></span>
+                    <!-- Desktop User Info & Score (Hidden on Mobile, Visible on SM and up) -->
+                    <div class="hidden sm:flex items-center gap-2 sm:gap-4">
+                        <!-- Student Badge -->
+                        <div class="flex items-center gap-2 bg-navy-900 px-3 py-1.5 rounded-lg border border-transparent text-xs font-bold text-slate-200">
+                            <i class="fa-solid fa-user-graduate text-brand-blue"></i>
+                            <span id="displayStudentName">Siswa</span>
+                        </div>
+
+                        <!-- Score Badge -->
+                        <div class="bg-amber-100 border border-amber-300 text-amber-900 px-3.5 py-1.5 rounded-xl font-extrabold text-sm sm:text-base flex items-center gap-2 shadow-sm">
+                            <span>🏆</span>
+                            <span>Score: <span id="scoreTextDesktop">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile Dropdown Menu (Hidden by default) -->
+                    <div id="mobileMenuDropdown" class="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 p-3 hidden flex-col gap-2 z-40 sm:hidden origin-top-right transition-all transform scale-95 opacity-0">
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 text-xs font-bold text-slate-700">
+                            <i class="fa-solid fa-user-graduate text-brand-blue"></i>
+                            <span id="displayStudentNameMobile" class="truncate">Siswa</span>
+                        </div>
+                        <div class="bg-amber-50 border border-amber-200 text-amber-900 px-3 py-2 rounded-lg font-extrabold text-sm flex items-center justify-between shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <span>🏆</span>
+                                <span>Score:</span>
+                            </div>
+                            <span id="scoreTextMobile">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -560,7 +584,7 @@
                         <h2 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
                             <span>Ayo Kita Mulai!</span>
                         </h2>
-                        <p class="text-xs sm:text-sm text-slate-300 font-medium">Ayo belajar mengenal nama-nama buah dalam Bahasa Inggris!</p>
+                        <p class="text-xs sm:text-sm text-slate-300 font-medium">belajar mengenal Nama Buah dalam Bahasa Inggris!</p>
                     </div>
                     <!-- Slide Counter -->
                     <div class="self-start sm:self-auto bg-navy-900 border border-transparent text-blue-400 px-3 py-1 rounded-full text-xs font-black">
@@ -578,7 +602,7 @@
             <div class="bg-amber-50 border-l-4 border-amber-400 p-3.5 rounded-r-xl mb-6 flex items-center gap-3">
                 <div class="text-amber-500 text-lg">💡</div>
                 <div class="text-xs sm:text-sm font-bold text-amber-900">
-                    Klik Gambar Buah untuk Menjawab!
+                 Klik Gambar Buah untuk Menjawab!
                 </div>
             </div>
 
@@ -598,7 +622,7 @@
                 </button>
 
                 <div class="text-xs font-bold text-slate-400 hidden sm:block">
-                    Selesaikan semua buah untuk lanjut
+                    Selesaikan Mengisi semua Buah untuk melanjutkan
                 </div>
 
                 <button id="nextBtn" onclick="changeSlide(1)" disabled class="px-6 py-2.5 rounded-xl bg-brand-blue hover:bg-blue-700 text-white font-bold text-sm shadow-md transition disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center gap-2">
@@ -695,7 +719,7 @@
         </div>
     </div>
 
-    <script>
+        <script>
         // Game State Controller
         let gameState = {
             studentName: '',
@@ -739,6 +763,7 @@
 
             gameState.studentName = nameInput;
             document.getElementById('displayStudentName').innerText = nameInput;
+            document.getElementById('displayStudentNameMobile').innerText = nameInput;
             document.getElementById('certStudentName').innerText = nameInput;
 
             // Hide cover & modal, reveal game screen
@@ -914,7 +939,8 @@
                 if (!gameState.completedFruitIds.has(activeFruit.id)) {
                     gameState.completedFruitIds.add(activeFruit.id);
                     gameState.score += 10;
-                    document.getElementById('scoreText').innerText = gameState.score;
+                    document.getElementById('scoreTextDesktop').innerText = gameState.score;
+                    document.getElementById('scoreTextMobile').innerText = gameState.score;
                 }
 
                 // Random Praise Message
@@ -976,12 +1002,58 @@
             gameState.score = 0;
             gameState.completedFruitIds.clear();
 
-            document.getElementById('scoreText').innerText = '0';
+            document.getElementById('scoreTextDesktop').innerText = '0';
+            document.getElementById('scoreTextMobile').innerText = '0';
             document.getElementById('resultsPage').classList.add('hidden');
             document.getElementById('resultsPage').classList.remove('flex');
+            
+            // close mobile menu if open
+            closeMobileMenu();
 
             renderCurrentSlide();
         }
+
+        // Mobile Menu Toggle Functions
+        function toggleMobileMenu() {
+            SoundFX.playClick();
+            const dropdown = document.getElementById('mobileMenuDropdown');
+            if (dropdown.classList.contains('hidden')) {
+                openMobileMenu();
+            } else {
+                closeMobileMenu();
+            }
+        }
+
+        function openMobileMenu() {
+            const dropdown = document.getElementById('mobileMenuDropdown');
+            dropdown.classList.remove('hidden');
+            // small delay to allow display:block to apply before transition
+            setTimeout(() => {
+                dropdown.classList.remove('scale-95', 'opacity-0');
+                dropdown.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeMobileMenu() {
+            const dropdown = document.getElementById('mobileMenuDropdown');
+            dropdown.classList.remove('scale-100', 'opacity-100');
+            dropdown.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, 150); // wait for transition to finish
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('mobileMenuDropdown');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            
+            // Check if the click is outside the dropdown and outside the button
+            if (!dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !menuBtn.contains(event.target)) {
+                closeMobileMenu();
+            }
+        });
+
     </script>
 </body>
 </html>
