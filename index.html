@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRUITS - English Vocabulary Game Kelas 5</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            800: '#1e295d',
+                            900: '#141c40',
+                        },
+                        brand: {
+                            orange: '#ff6b2b',
+                            blue: '#1d4ed8',
+                            green: '#10b981',
+                            yellow: '#fbbf24',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Custom Cross Pattern for Cover Background matching image */
+        .bg-pattern {
+            background-color: #1a2342;
+            background-image: radial-gradient(#2d3a66 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+        }
+
+        /* Pulse animation for active card */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Shake animation for wrong answer */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Modal bounce in */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Hide scrollbars for clean presentation */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <script>
+        // Audio Synthesizer using Web Audio API for zero external dependency
+        const SoundFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playClick() {
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            },
+            playCorrect() {
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                
+                // Arpeggio notes: C5, E5, G5, C6
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.08);
+                    gain.gain.setValueAtTime(0.3, now + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.08);
+                    osc.stop(now + i * 0.08 + 0.2);
+                });
+            },
+            playWrong() {
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 0.25);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        };
+
+        // Master Data Structure for Fruits Vocabulary
+        const FRUITS_DATA = [
+            // SLIDE 1
+            {
+                id: 1,
+                name: "Apel",
+                english: "Apple",
+                answers: ["apple"],
+                slide: 1,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <path d="M 100 40 C 95 25 110 15 115 10 C 112 25 102 35 100 40 Z" fill="#4d7c0f"/>
+                        <path d="M 100 40 Q 100 20 102 12" stroke="#78350f" stroke-width="5" fill="none" stroke-linecap="round"/>
+                        <path d="M 100 45 C 80 30 35 45 35 105 C 35 160 75 185 100 170 C 125 185 165 160 165 105 C 165 45 120 30 100 45 Z" fill="#ef4444"/>
+                        <ellipse cx="65" cy="75" rx="12" ry="25" fill="#fca5a5" transform="rotate(-25 65 75)" opacity="0.6"/>
+                      </svg>`
+            },
+            {
+                id: 2,
+                name: "Pisang",
+                english: "Banana",
+                answers: ["banana"],
+                slide: 1,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <path d="M 40 120 C 50 165 100 175 155 130 C 175 110 180 85 175 60 C 165 95 135 145 80 145 C 50 145 35 125 40 120 Z" fill="#eab308"/>
+                        <path d="M 35 122 C 30 115 25 100 30 95 C 38 95 40 105 45 115 Z" fill="#854d0e"/>
+                        <path d="M 175 60 C 182 55 188 52 190 48 C 185 45 178 50 172 54 Z" fill="#854d0e"/>
+                        <path d="M 42 118 C 65 155 120 160 172 58" stroke="#fef08a" stroke-width="6" fill="none" opacity="0.8"/>
+                      </svg>`
+            },
+            {
+                id: 3,
+                name: "Jeruk",
+                english: "Orange",
+                answers: ["orange"],
+                slide: 1,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <circle cx="100" cy="105" r="65" fill="#f97316"/>
+                        <circle cx="100" cy="105" r="65" fill="url(#orangeDots)" opacity="0.15"/>
+                        <path d="M 100 40 Q 115 25 130 30 Q 120 45 100 40 Z" fill="#15803d"/>
+                        <path d="M 100 42 Q 98 32 95 28" stroke="#78350f" stroke-width="4" fill="none"/>
+                        <ellipse cx="75" cy="75" rx="14" ry="24" fill="#ffedd5" transform="rotate(-30 75 75)" opacity="0.5"/>
+                      </svg>`
+            },
+            {
+                id: 4,
+                name: "Semangka",
+                english: "Watermelon",
+                answers: ["watermelon"],
+                slide: 1,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <path d="M 25 100 A 75 75 0 0 0 175 100 Z" fill="#15803d"/>
+                        <path d="M 32 100 A 68 68 0 0 0 168 100 Z" fill="#bbf7d0"/>
+                        <path d="M 40 100 A 60 60 0 0 0 160 100 Z" fill="#ef4444"/>
+                        <!-- Seeds -->
+                        <ellipse cx="70" cy="120" rx="3" ry="6" fill="#1e293b"/>
+                        <ellipse cx="100" cy="130" rx="3" ry="6" fill="#1e293b"/>
+                        <ellipse cx="130" cy="120" rx="3" ry="6" fill="#1e293b"/>
+                        <ellipse cx="85" cy="140" rx="3" ry="6" fill="#1e293b"/>
+                        <ellipse cx="115" cy="142" rx="3" ry="6" fill="#1e293b"/>
+                      </svg>`
+            },
+
+            // SLIDE 2
+            {
+                id: 5,
+                name: "Mangga",
+                english: "Mango",
+                answers: ["mango"],
+                slide: 2,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <path d="M 100 40 C 145 35 170 70 165 115 C 160 155 125 175 90 165 C 60 155 40 120 45 85 C 50 55 70 42 100 40 Z" fill="#f59e0b"/>
+                        <path d="M 100 40 C 130 38 150 60 155 90 C 140 60 115 45 100 40 Z" fill="#ef4444" opacity="0.7"/>
+                        <path d="M 98 40 Q 95 25 90 20" stroke="#78350f" stroke-width="5" fill="none"/>
+                        <path d="M 98 32 C 115 25 125 28 130 35 C 120 38 108 36 98 32 Z" fill="#16a34a"/>
+                        <ellipse cx="80" cy="80" rx="10" ry="25" fill="#fef08a" transform="rotate(-20 80 80)" opacity="0.6"/>
+                      </svg>`
+            },
+            {
+                id: 6,
+                name: "Nanas",
+                english: "Pineapple",
+                answers: ["pineapple"],
+                slide: 2,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- Crown Leaves -->
+                        <path d="M 100 65 L 85 20 C 95 35 100 50 100 65 Z" fill="#15803d"/>
+                        <path d="M 100 65 L 100 15 C 105 35 105 50 100 65 Z" fill="#22c55e"/>
+                        <path d="M 100 65 L 115 20 C 105 35 100 50 100 65 Z" fill="#16a34a"/>
+                        <path d="M 100 65 L 70 30 C 85 45 95 55 100 65 Z" fill="#15803d"/>
+                        <path d="M 100 65 L 130 30 C 115 45 105 55 100 65 Z" fill="#22c55e"/>
+                        <!-- Body -->
+                        <ellipse cx="100" cy="125" rx="48" ry="58" fill="#d97706"/>
+                        <!-- Pattern lines -->
+                        <path d="M 65 95 L 135 155 M 55 120 L 125 170 M 80 80 L 145 130 M 135 95 L 65 155 M 145 120 L 75 170 M 120 80 L 55 130" stroke="#b45309" stroke-width="3"/>
+                        <circle cx="100" cy="125" r="3" fill="#fef08a"/>
+                        <circle cx="80" cy="110" r="3" fill="#fef08a"/>
+                        <circle cx="120" cy="110" r="3" fill="#fef08a"/>
+                        <circle cx="80" cy="140" r="3" fill="#fef08a"/>
+                        <circle cx="120" cy="140" r="3" fill="#fef08a"/>
+                      </svg>`
+            },
+            {
+                id: 7,
+                name: "Anggur",
+                english: "Grapes",
+                answers: ["grapes", "grape"],
+                slide: 2,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- Stem & Leaf -->
+                        <path d="M 100 45 Q 105 25 120 20" stroke="#78350f" stroke-width="5" fill="none"/>
+                        <path d="M 100 45 Q 80 35 70 45 Q 85 60 100 45 Z" fill="#16a34a"/>
+                        <!-- Grapes cluster -->
+                        <circle cx="100" cy="65" r="16" fill="#7e22ce"/>
+                        <circle cx="82" cy="75" r="16" fill="#6b21a8"/>
+                        <circle cx="118" cy="75" r="16" fill="#9333ea"/>
+                        <circle cx="68" cy="95" r="16" fill="#7e22ce"/>
+                        <circle cx="100" cy="95" r="16" fill="#a855f7"/>
+                        <circle cx="132" cy="95" r="16" fill="#6b21a8"/>
+                        <circle cx="82" cy="118" r="16" fill="#9333ea"/>
+                        <circle cx="118" cy="118" r="16" fill="#7e22ce"/>
+                        <circle cx="100" cy="140" r="16" fill="#a855f7"/>
+                        <circle cx="100" cy="160" r="12" fill="#7e22ce"/>
+                        <!-- Highlights -->
+                        <circle cx="95" cy="90" r="4" fill="#f3e8ff" opacity="0.7"/>
+                        <circle cx="113" cy="70" r="4" fill="#f3e8ff" opacity="0.7"/>
+                      </svg>`
+            },
+            {
+                id: 8,
+                name: "Stroberi",
+                english: "Strawberry",
+                answers: ["strawberry"],
+                slide: 2,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- Leaf Crown -->
+                        <path d="M 100 55 L 80 35 C 90 48 95 52 100 55 Z" fill="#15803d"/>
+                        <path d="M 100 55 L 120 35 C 110 48 105 52 100 55 Z" fill="#16a34a"/>
+                        <path d="M 100 55 L 100 25 C 100 40 100 50 100 55 Z" fill="#22c55e"/>
+                        <path d="M 100 55 L 60 50 C 80 52 90 54 100 55 Z" fill="#15803d"/>
+                        <path d="M 100 55 L 140 50 C 120 52 110 54 100 55 Z" fill="#16a34a"/>
+                        <!-- Stem -->
+                        <path d="M 100 30 Q 102 20 105 15" stroke="#15803d" stroke-width="4" fill="none"/>
+                        <!-- Body -->
+                        <path d="M 50 65 C 40 100 60 155 100 175 C 140 155 160 100 150 65 C 135 50 65 50 50 65 Z" fill="#dc2626"/>
+                        <!-- Seeds -->
+                        <ellipse cx="75" cy="80" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="100" cy="85" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="125" cy="80" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="85" cy="110" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="115" cy="110" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="70" cy="120" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="130" cy="120" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="100" cy="135" rx="2" ry="4" fill="#fef08a"/>
+                        <ellipse cx="90" cy="155" rx="2" ry="4" fill="#fef08a"/>
+                      </svg>`
+            },
+
+            // SLIDE 3
+            {
+                id: 9,
+                name: "Pepaya",
+                english: "Papaya",
+                answers: ["papaya"],
+                slide: 3,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- Whole Papaya Half Cut View for clarity -->
+                        <path d="M 100 35 C 145 35 165 75 160 130 C 155 170 125 180 100 180 C 75 180 45 170 40 130 C 35 75 55 35 100 35 Z" fill="#ea580c"/>
+                        <path d="M 100 45 C 135 45 150 80 146 126 C 142 160 120 168 100 168 C 80 168 58 160 54 126 C 50 80 65 45 100 45 Z" fill="#f97316"/>
+                        <!-- Inner Cavity -->
+                        <ellipse cx="100" cy="115" rx="25" ry="40" fill="#7c2d12"/>
+                        <!-- Black Seeds inside cavity -->
+                        <circle cx="95" cy="95" r="3.5" fill="#0f172a"/>
+                        <circle cx="105" cy="98" r="3.5" fill="#0f172a"/>
+                        <circle cx="90" cy="110" r="3.5" fill="#0f172a"/>
+                        <circle cx="102" cy="112" r="3.5" fill="#0f172a"/>
+                        <circle cx="112" cy="108" r="3.5" fill="#0f172a"/>
+                        <circle cx="94" cy="125" r="3.5" fill="#0f172a"/>
+                        <circle cx="106" cy="128" r="3.5" fill="#0f172a"/>
+                        <circle cx="100" cy="140" r="3.5" fill="#0f172a"/>
+                        <path d="M 100 35 Q 100 22 95 18" stroke="#15803d" stroke-width="5" fill="none"/>
+                      </svg>`
+            },
+            {
+                id: 10,
+                name: "Jambu Biji",
+                english: "Guava",
+                answers: ["guava"],
+                slide: 3,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- Whole green Guava with sliced open pink center -->
+                        <circle cx="85" cy="105" r="55" fill="#65a30d"/>
+                        <path d="M 115 105 A 50 50 0 1 1 115 104 Z" fill="#15803d"/>
+                        <!-- Cut Half -->
+                        <circle cx="120" cy="110" r="48" fill="#166534"/>
+                        <circle cx="120" cy="110" r="43" fill="#f43f5e"/>
+                        <!-- Tiny Guava Seeds -->
+                        <circle cx="110" cy="100" r="2" fill="#fde047"/>
+                        <circle cx="125" cy="95" r="2" fill="#fde047"/>
+                        <circle cx="130" cy="110" r="2" fill="#fde047"/>
+                        <circle cx="115" cy="120" r="2" fill="#fde047"/>
+                        <circle cx="128" cy="125" r="2" fill="#fde047"/>
+                        <!-- Leaf -->
+                        <path d="M 75 52 Q 60 30 45 35 Q 55 55 75 52 Z" fill="#15803d"/>
+                        <path d="M 80 54 Q 85 40 82 35" stroke="#78350f" stroke-width="4" fill="none"/>
+                      </svg>`
+            },
+            {
+                id: 11,
+                name: "Alpukat",
+                english: "Avocado",
+                answers: ["avocado"],
+                slide: 3,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- Outer Skin -->
+                        <path d="M 100 30 C 135 30 160 80 155 130 C 150 170 128 180 100 180 C 72 180 50 170 45 130 C 40 80 65 30 100 30 Z" fill="#14532d"/>
+                        <!-- Flesh -->
+                        <path d="M 100 40 C 128 40 148 85 144 126 C 140 160 122 170 100 170 C 78 170 60 160 56 126 C 52 85 72 40 100 40 Z" fill="#bef264"/>
+                        <!-- Inner light flesh -->
+                        <path d="M 100 50 C 120 50 136 90 132 124 C 128 152 116 160 100 160 C 84 160 72 152 68 124 C 64 90 80 50 100 50 Z" fill="#fef08a"/>
+                        <!-- Seed -->
+                        <circle cx="100" cy="128" r="28" fill="#78350f"/>
+                        <ellipse cx="92" cy="120" rx="8" ry="14" fill="#a16207" transform="rotate(-20 92 120)" opacity="0.6"/>
+                      </svg>`
+            },
+            {
+                id: 12,
+                name: "Kelapa",
+                english: "Coconut",
+                answers: ["coconut"],
+                slide: 3,
+                svg: `<svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- Outer Brown Shell -->
+                        <circle cx="100" cy="110" r="62" fill="#78350f"/>
+                        <!-- Texture lines -->
+                        <path d="M 50 90 Q 100 70 150 90 M 42 110 Q 100 95 158 110 M 50 130 Q 100 120 150 130" stroke="#451a03" stroke-width="3" fill="none"/>
+                        <!-- Inner White Meat Cut Out -->
+                        <circle cx="100" cy="110" r="50" fill="#f8fafc"/>
+                        <!-- Inner Hollow Water Center -->
+                        <circle cx="100" cy="110" r="36" fill="#38bdf8" opacity="0.3"/>
+                        <!-- Coconut Palm Leaf accent -->
+                        <path d="M 130 35 Q 160 20 180 30 Q 160 50 130 35 Z" fill="#16a34a"/>
+                        <path d="M 110 45 Q 140 25 165 40 Q 140 58 110 45 Z" fill="#15803d"/>
+                      </svg>`
+            }
+        ];
+
+        // Random positive feedback quotes
+        const PRAISE_QUOTES = [
+            "Wow, kamu hebat sekali! 🎉",
+            "Keren... kamu pintar sekali! ⭐",
+            "Luar biasa! Jawabanmu tepat! 🚀",
+            "Hebat! Vocabulary-mu makin jago! 🍎"
+        ];
+    </script>
+
+    <!-- COVER PAGE CONTAINER -->
+    <div id="coverPage" class="min-h-screen bg-pattern flex flex-col justify-between items-center p-4 relative overflow-hidden">
+        
+        <!-- Top Fullscreen Button -->
+        <div class="w-full flex justify-end p-2 z-10">
+            <button onclick="toggleFullScreen()" class="text-white/80 hover:text-white bg-slate-800/60 hover:bg-slate-800 backdrop-blur px-4 py-2 rounded-full text-sm font-medium transition flex items-center gap-2 border border-slate-700">
+                <i class="fa-solid fa-expand"></i> <span id="fsText">Layar Penuh</span>
+            </button>
+        </div>
+
+        <!-- Main Center Cover Content -->
+        <div class="flex flex-col items-center text-center my-auto max-w-2xl w-full z-10 px-4">
+            
+            <!-- Teacher Avatar Circle -->
+            <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-emerald-400/80 shadow-2xl overflow-hidden bg-slate-700 mb-6 relative animate-float">
+                <img src="lehan.jpg" 
+                     alt="Guru" class="w-full h-full object-cover" 
+                     onerror="this.onerror=null; this.src='https://placehold.co/150x150/1e293b/ffffff?text=👨‍🏫';">
+            </div>
+
+            <!-- Title Section -->
+            <h1 class="text-2xl sm:text-4xl font-black text-white tracking-wider uppercase mb-2 drop-shadow-md">
+                GAME BAHASA INGGRIS
+            </h1>
+            
+            <div class="text-amber-400 font-extrabold text-xl sm:text-2xl uppercase tracking-widest mb-3">
+                KELAS 5
+            </div>
+
+            <div class="text-slate-300 font-semibold text-sm sm:text-base mb-6 tracking-wide">
+                SD NEGERI 2 SENDANG AYU
+            </div>
+
+            <!-- Subject Badge Capsule -->
+            <div class="bg-slate-800/80 border border-slate-700/80 backdrop-blur-md px-6 py-2.5 rounded-full text-slate-200 text-xs sm:text-sm font-medium mb-8 shadow-inner max-w-full truncate">
+                Pertemuan 2 : Kosakata Buah-Buahan (Fruits)
+            </div>
+
+            <!-- Big Start Button -->
+            <button onclick="openNameModal()" class="group relative inline-flex items-center justify-center px-8 py-4 sm:px-10 sm:py-5 font-bold text-white text-lg sm:text-xl transition-all duration-200 bg-brand-orange hover:bg-orange-500 rounded-full shadow-lg hover:shadow-orange-500/40 hover:-translate-y-1 active:translate-y-0 w-full sm:w-auto">
+                <span>MULAI BERMAIN</span>
+                <i class="fa-solid fa-arrow-right ml-3 group-hover:translate-x-1 transition-transform"></i>
+            </button>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="text-slate-400 text-xs py-4 text-center z-10 font-medium">
+            Copyright &copy; 2026 - Created By Pak Lehan
+        </div>
+    </div>
+
+    <!-- STUDENT DATA INPUT MODAL -->
+    <div id="nameModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-pop-in border border-slate-100">
+            <!-- Modal Header Accent -->
+            <div class="h-3 bg-brand-blue"></div>
+            
+            <div class="p-6 sm:p-8 text-center">
+                <h2 class="text-2xl font-extrabold text-navy-900 mb-6">
+                    Isi Data Diri Dulu Yuk!
+                </h2>
+
+                <form onsubmit="handleStartGame(event)" class="space-y-5 text-left">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                            Nama Lengkap
+                        </label>
+                        <input type="text" id="studentNameInput" required placeholder="Masukkan namamu..." 
+                               class="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-brand-blue focus:ring-2 focus:ring-blue-100 outline-none transition text-slate-800 font-medium text-base">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                            Kelas
+                        </label>
+                        <input type="text" id="studentClassInput" value="5" readonly 
+                               class="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-500 font-bold text-base cursor-not-allowed">
+                    </div>
+
+                    <button type="submit" class="w-full mt-4 py-4 bg-navy-800 hover:bg-navy-900 text-white font-bold text-base rounded-xl shadow-lg shadow-navy-800/30 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                        <span>LANJUT KE PERMAINAN</span>
+                        <i class="fa-solid fa-play text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN GAME INTERFACE -->
+    <div id="gamePage" class="min-h-screen bg-navy-900 flex-col justify-between hidden">
+        
+        <!-- Top App Bar Header -->
+        <header class="bg-navy-800 border-b border-transparent sticky top-0 z-30 shadow-sm">
+            <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+                
+                <!-- Left Title & Grade -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 flex items-center justify-center">
+                        <img src="Logo-Tut-Wuri-Handayani-PNG-Warna.jpg" alt="Logo" class="w-full h-full object-contain drop-shadow-sm">
+                    </div>
+                    <div>
+                        <h1 class="font-black text-white text-base sm:text-lg leading-tight">NAMA BUAH</h1>
+                        <p class="text-xs font-semibold text-slate-300">Game Dalam Bahasa Inggris</p>
+                    </div>
+                </div>
+
+                <!-- Right Student Tag & Score Badge -->
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <!-- Student Badge -->
+                    <div class="hidden sm:flex items-center gap-2 bg-navy-900 px-3 py-1.5 rounded-lg border border-transparent text-xs font-bold text-slate-200">
+                        <i class="fa-solid fa-user-graduate text-brand-blue"></i>
+                        <span id="displayStudentName">Siswa</span>
+                    </div>
+
+                    <!-- Score Badge -->
+                    <div class="bg-amber-100 border border-amber-300 text-amber-900 px-3.5 py-1.5 rounded-xl font-extrabold text-sm sm:text-base flex items-center gap-2 shadow-sm">
+                        <span>🏆</span>
+                        <span>Score: <span id="scoreText">0</span></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Learning Slide Area -->
+        <main class="max-w-4xl mx-auto px-4 py-6 w-full flex-1 flex flex-col justify-center">
+            
+            <!-- Slide Header & Progress Card -->
+            <div class="bg-navy-800 rounded-2xl p-4 sm:p-6 shadow-md border border-transparent mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                            <span>NAMA BUAH – Ayo Belajar!</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 font-medium">Ayo belajar mengenal nama-nama buah dalam Bahasa Inggris!</p>
+                    </div>
+                    <!-- Slide Counter -->
+                    <div class="self-start sm:self-auto bg-navy-900 border border-transparent text-blue-400 px-3 py-1 rounded-full text-xs font-black">
+                        Slide <span id="currentSlideNum">1</span> of 3
+                    </div>
+                </div>
+
+                <!-- Progress Bar Container -->
+                <div class="w-full bg-navy-900 h-3.5 rounded-full overflow-hidden p-0.5 border border-transparent">
+                    <div id="progressBar" class="bg-gradient-to-r from-brand-orange to-orange-500 h-full rounded-full transition-all duration-500 w-0"></div>
+                </div>
+            </div>
+
+            <!-- Instruction Banner -->
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-3.5 rounded-r-xl mb-6 flex items-center gap-3">
+                <div class="text-amber-500 text-lg">💡</div>
+                <div class="text-xs sm:text-sm font-bold text-amber-900">
+                    Klik gambar buah untuk menjawab!
+                </div>
+            </div>
+
+            <!-- 4 Fruit Cards Grid -->
+            <!-- Grid: 2 columns on mobile, 2 columns on tablet, 4 columns on desktop -->
+            <div id="fruitGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                <!-- Dynamically generated via JS -->
+            </div>
+        </main>
+
+        <!-- Bottom Navigation Controls Footer -->
+        <footer class="bg-navy-800 border-t border-transparent py-4 px-4 sticky bottom-0 z-20">
+            <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                <button id="prevBtn" onclick="changeSlide(-1)" class="px-5 py-2.5 rounded-xl border-2 border-navy-600 text-slate-300 font-bold text-sm hover:bg-navy-700 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span>Sebelumnya</span>
+                </button>
+
+                <div class="text-xs font-bold text-slate-400 hidden sm:block">
+                    Selesaikan semua buah untuk lanjut
+                </div>
+
+                <button id="nextBtn" onclick="changeSlide(1)" disabled class="px-6 py-2.5 rounded-xl bg-brand-blue hover:bg-blue-700 text-white font-bold text-sm shadow-md transition disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center gap-2">
+                    <span id="nextBtnText">Berikutnya</span>
+                    <i id="nextBtnIcon" class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- QUESTION Pop-Up MODAL OVERLAY -->
+    <div id="questionModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div id="modalContainer" class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-pop-in relative border border-slate-100">
+            
+            <!-- Close Button -->
+            <button onclick="closeQuestionModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition font-bold z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="p-6 sm:p-8 text-center">
+                <!-- Fruit Image Frame -->
+                <div class="w-40 h-40 sm:w-48 sm:h-48 mx-auto bg-slate-50 rounded-2xl p-4 mb-4 flex items-center justify-center border-2 border-dashed border-slate-200 relative">
+                    <div id="modalFruitSvg" class="w-full h-full"></div>
+                </div>
+
+                <!-- Prompt Title -->
+                <h3 class="text-base sm:text-lg font-extrabold text-slate-800 mb-4">
+                    Apa nama buah ini dalam bahasa Inggris?
+                </h3>
+
+                <!-- Input Form -->
+                <form onsubmit="submitAnswer(event)" class="space-y-4">
+                    <div class="relative">
+                        <input type="text" id="answerInput" autocomplete="off" placeholder="Ketik jawabanmu di sini..." 
+                               class="w-full px-5 py-3.5 text-center text-lg font-bold text-slate-800 bg-slate-50 rounded-2xl border-2 border-slate-300 focus:border-brand-blue focus:bg-white focus:ring-4 focus:ring-blue-100 outline-none transition uppercase tracking-wider">
+                    </div>
+
+                    <!-- Feedback Alert Message Area -->
+                    <div id="feedbackAlert" class="hidden rounded-xl p-3 text-sm font-bold text-center"></div>
+
+                    <!-- Submit Button -->
+                    <button id="checkAnswerBtn" type="submit" class="w-full py-4 bg-brand-orange hover:bg-orange-500 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-orange-500/30 transition transform hover:-translate-y-0.5 active:translate-y-0">
+                        CEK JAWABAN
+                    </button>
+
+                    <!-- Continue Button (shown on correct answer) -->
+                    <button id="continueBtn" type="button" onclick="closeQuestionModal()" class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-emerald-500/30 transition hidden">
+                        LANJUTKAN ➔
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- FINAL RESULTS SCREEN -->
+    <div id="resultsPage" class="min-h-screen bg-slate-900/90 bg-pattern flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 text-center animate-pop-in relative border border-slate-200">
+            
+            <div class="text-5xl sm:text-6xl mb-3 animate-float">🎉</div>
+
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-800 mb-1">
+                GREAT JOB!
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-500 font-semibold mb-6">
+                Kamu sudah menyelesaikan semua kosakata buah!
+            </p>
+
+            <!-- Score Box Card -->
+            <div class="bg-gradient-to-b from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 mb-6 shadow-inner">
+                <div class="text-xs font-bold text-amber-700 uppercase tracking-widest mb-1">Your Score</div>
+                <div class="text-4xl sm:text-5xl font-black text-amber-600 tracking-tight">
+                    <span id="finalScore">120</span> / 120
+                </div>
+                <div class="mt-3 inline-block bg-white border border-amber-200 rounded-full px-4 py-1 text-xs font-extrabold text-amber-800 shadow-sm">
+                    12 / 12 Fruits Completed
+                </div>
+            </div>
+
+            <!-- Student Certificate Snippet -->
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs text-slate-600 font-medium mb-6">
+                Nama: <span id="certStudentName" class="font-bold text-slate-800">Siswa</span> • Kelas: <span class="font-bold text-slate-800">5 SD</span>
+            </div>
+
+            <!-- Praise Quote -->
+            <div id="finalPraiseMessage" class="text-sm font-extrabold text-brand-blue mb-8 px-2 leading-relaxed">
+                "Wow, kamu hebat sekali! Kamu sangat pintar! 🏆🎉"
+            </div>
+
+            <!-- Play Again Button -->
+            <button onclick="restartGame()" class="w-full py-4 bg-brand-orange hover:bg-orange-500 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-orange-500/30 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>MAIN LAGI</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game State Controller
+        let gameState = {
+            studentName: '',
+            studentClass: '5',
+            currentSlide: 1,
+            score: 0,
+            completedFruitIds: new Set(),
+            activeFruit: null
+        };
+
+        // Fullscreen Toggle Helper
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+                document.getElementById('fsText').innerText = 'Keluar Layar Penuh';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    document.getElementById('fsText').innerText = 'Layar Penuh';
+                }
+            }
+        }
+
+        // Modal triggers
+        function openNameModal() {
+            SoundFX.playClick();
+            document.getElementById('nameModal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('studentNameInput').focus();
+            }, 100);
+        }
+
+        function handleStartGame(e) {
+            e.preventDefault();
+            SoundFX.playClick();
+            
+            const nameInput = document.getElementById('studentNameInput').value.trim();
+            if (!nameInput) return;
+
+            gameState.studentName = nameInput;
+            document.getElementById('displayStudentName').innerText = nameInput;
+            document.getElementById('certStudentName').innerText = nameInput;
+
+            // Hide cover & modal, reveal game screen
+            document.getElementById('nameModal').classList.add('hidden');
+            document.getElementById('coverPage').classList.add('hidden');
+            document.getElementById('gamePage').classList.remove('hidden');
+            document.getElementById('gamePage').classList.add('flex');
+
+            renderCurrentSlide();
+        }
+
+        // Render Cards for Active Slide
+        function renderCurrentSlide() {
+            const grid = document.getElementById('fruitGrid');
+            grid.innerHTML = '';
+
+            // Filter fruits for current slide
+            const slideFruits = FRUITS_DATA.filter(f => f.slide === gameState.currentSlide);
+
+            slideFruits.forEach(fruit => {
+                const isCompleted = gameState.completedFruitIds.has(fruit.id);
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-3xl border-2 transition-all duration-300 p-4 flex flex-col items-center justify-between shadow-sm cursor-pointer hover:shadow-md hover:-translate-y-1 ${
+                    isCompleted ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-200 hover:border-brand-blue'
+                }`;
+                card.onclick = () => openQuestionModal(fruit);
+
+                card.innerHTML = `
+                    <!-- Fruit Vector Illustration -->
+                    <div class="w-28 h-28 sm:w-32 sm:h-32 p-2 flex items-center justify-center my-2">
+                        ${fruit.svg}
+                    </div>
+
+                    <!-- Status Label -->
+                    <div class="w-full mt-2">
+                        ${isCompleted ? `
+                            <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl py-2 px-3 text-center text-xs font-black flex items-center justify-center gap-1.5">
+                                <span>✅</span>
+                                <span>${fruit.english}</span>
+                            </div>
+                        ` : `
+                            <div class="bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-brand-blue rounded-xl py-2 px-3 text-center text-xs font-extrabold flex items-center justify-center gap-1 border border-slate-200">
+                                <span>🔍</span>
+                                <span>Klik untuk menjawab</span>
+                            </div>
+                        `}
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            // Update Slide Info Header
+            document.getElementById('currentSlideNum').innerText = gameState.currentSlide;
+            
+            // Update Progress Bar
+            const totalFruits = FRUITS_DATA.length;
+            const completedCount = gameState.completedFruitIds.size;
+            const progressPercent = (completedCount / totalFruits) * 100;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+            // Update Navigation Buttons State
+            updateNavigationButtons();
+        }
+
+        // Check if all 4 fruits on current slide are done
+        function isCurrentSlideComplete() {
+            const slideFruits = FRUITS_DATA.filter(f => f.slide === gameState.currentSlide);
+            return slideFruits.every(f => gameState.completedFruitIds.has(f.id));
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const nextBtnText = document.getElementById('nextBtnText');
+
+            // Prev button: Hidden on slide 1
+            if (gameState.currentSlide === 1) {
+                prevBtn.style.visibility = 'hidden';
+            } else {
+                prevBtn.style.visibility = 'visible';
+                prevBtn.disabled = false;
+            }
+
+            // Next button: Only enabled if current slide complete
+            const slideDone = isCurrentSlideComplete();
+            nextBtn.disabled = !slideDone;
+
+            if (gameState.currentSlide === 3) {
+                nextBtnText.innerText = "SELESAI BELAJAR 🎉";
+            } else {
+                nextBtnText.innerText = "Berikutnya";
+            }
+        }
+
+        function changeSlide(direction) {
+            SoundFX.playClick();
+            
+            if (direction === 1 && !isCurrentSlideComplete()) return;
+
+            const newSlide = gameState.currentSlide + direction;
+
+            if (newSlide > 3) {
+                showFinalResults();
+                return;
+            }
+
+            if (newSlide >= 1 && newSlide <= 3) {
+                gameState.currentSlide = newSlide;
+                renderCurrentSlide();
+            }
+        }
+
+        // Open Question Modal
+        function openQuestionModal(fruit) {
+            SoundFX.playClick();
+            gameState.activeFruit = fruit;
+
+            // Reset modal elements
+            document.getElementById('modalFruitSvg').innerHTML = fruit.svg;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').disabled = false;
+            
+            const alertBox = document.getElementById('feedbackAlert');
+            alertBox.className = 'hidden rounded-xl p-3 text-sm font-bold text-center';
+            alertBox.innerText = '';
+
+            document.getElementById('checkAnswerBtn').classList.remove('hidden');
+            document.getElementById('continueBtn').classList.add('hidden');
+
+            const modal = document.getElementById('questionModal');
+            modal.classList.remove('hidden');
+
+            // Auto focus input
+            setTimeout(() => {
+                const input = document.getElementById('answerInput');
+                input.focus();
+            }, 150);
+        }
+
+        function closeQuestionModal() {
+            SoundFX.playClick();
+            document.getElementById('questionModal').classList.add('hidden');
+            renderCurrentSlide();
+        }
+
+        // Answer Submission & Verification
+        function submitAnswer(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('answerInput');
+            const userVal = inputEl.value.trim().toLowerCase();
+            const alertBox = document.getElementById('feedbackAlert');
+            const modalContainer = document.getElementById('modalContainer');
+
+            if (!userVal) return;
+
+            const activeFruit = gameState.activeFruit;
+            const isCorrect = activeFruit.answers.includes(userVal);
+
+            if (isCorrect) {
+                // Correct Answer Logic
+                SoundFX.playCorrect();
+
+                // Trigger confetti particles
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { y: 0.6 }
+                });
+
+                // Award score if not previously completed
+                if (!gameState.completedFruitIds.has(activeFruit.id)) {
+                    gameState.completedFruitIds.add(activeFruit.id);
+                    gameState.score += 10;
+                    document.getElementById('scoreText').innerText = gameState.score;
+                }
+
+                // Random Praise Message
+                const randomPraise = PRAISE_QUOTES[Math.floor(Math.random() * PRAISE_QUOTES.length)];
+
+                alertBox.className = 'rounded-xl p-3 text-sm font-extrabold text-center bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pop-in';
+                alertBox.innerHTML = `${randomPraise} <div class="text-xs font-bold text-emerald-600 mt-1">+10 POINTS</div>`;
+
+                inputEl.disabled = true;
+                document.getElementById('checkAnswerBtn').classList.add('hidden');
+                document.getElementById('continueBtn').classList.remove('hidden');
+
+            } else {
+                // Wrong Answer Logic
+                SoundFX.playWrong();
+
+                // Shake animation
+                modalContainer.classList.remove('animate-shake');
+                void modalContainer.offsetWidth; // trigger reflow
+                modalContainer.classList.add('animate-shake');
+
+                alertBox.className = 'rounded-xl p-3 text-sm font-extrabold text-center bg-rose-100 text-rose-700 border border-rose-300';
+                alertBox.innerText = 'Coba lagi yuk! 😊';
+
+                // Keep focus ready for next attempt
+                inputEl.select();
+            }
+        }
+
+        // Final Results Summary Screen
+        function showFinalResults() {
+            SoundFX.playCorrect();
+            
+            // Big confetti celebration burst
+            confetti({ particleCount: 120, spread: 100, origin: { y: 0.4 } });
+
+            document.getElementById('finalScore').innerText = gameState.score;
+            
+            // Custom Praise based on score
+            const praiseEl = document.getElementById('finalPraiseMessage');
+            if (gameState.score >= 100) {
+                praiseEl.innerText = "Wow, kamu hebat sekali! Kamu sangat pintar! 🏆🎉";
+            } else if (gameState.score >= 80) {
+                praiseEl.innerText = "Keren... kamu pintar sekali! Terus semangat belajar! ⭐";
+            } else if (gameState.score >= 60) {
+                praiseEl.innerText = "Good job! Kamu sudah berusaha dengan baik! 👍";
+            } else {
+                praiseEl.innerText = "Jangan menyerah! Ayo belajar lagi dan coba kembali! 💪";
+            }
+
+            document.getElementById('resultsPage').classList.remove('hidden');
+            document.getElementById('resultsPage').classList.add('flex');
+        }
+
+        // Restart Game
+        function restartGame() {
+            SoundFX.playClick();
+            gameState.currentSlide = 1;
+            gameState.score = 0;
+            gameState.completedFruitIds.clear();
+
+            document.getElementById('scoreText').innerText = '0';
+            document.getElementById('resultsPage').classList.add('hidden');
+            document.getElementById('resultsPage').classList.remove('flex');
+
+            renderCurrentSlide();
+        }
+    </script>
+</body>
+</html>
